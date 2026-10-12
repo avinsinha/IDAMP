@@ -1,0 +1,11 @@
+store_id,store_name,city,state,region,store_type,sq_footage
+S001,Downtown Flagship,New York,NY,Northeast,Flagship,12000
+S002,Westfield Mall,Los Angeles,CA,West,Mall,8500
+S003,Midtown Center,Chicago,IL,Midwest,Standalone,9200
+S004,Southside Plaza,Houston,TX,Southwest,Mall,7800
+S005,Harbor View,Seattle,WA,West,Standalone,6500
+S006,Peachtree Center,Atlanta,GA,Southeast,Mall,8900
+S007,Liberty Square,Boston,MA,Northeast,Standalone,7200
+S008,Riverside Commons,Denver,CO,West,Mall,6800
+S009,Lakeside Retail,Minneapolis,MN,Midwest,Standalone,7100
+S010,Suncoast Mall,Miami,FL,Southeast,Mall,9500

@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables — never commit secrets
+.env
+
+# Generated pipeline outputs — ignore contents, keep directory stub
+data/bronze_layer/*
+!data/bronze_layer/.gitkeep
+data/silver_layer/*
+!data/silver_layer/.gitkeep
+data/gold_layer/*
+!data/gold_layer/.gitkeep
+data/profiles/*
+!data/profiles/.gitkeep
+data/sttm/*
+!data/sttm/.gitkeep
+data/traces/*
+!data/traces/.gitkeep
+
+# Reports output
+reports/*
+!reports/.gitkeep
+
+# Audit logs (runtime-generated, high volume)
+audit_logs/*
+!audit_logs/.gitkeep
+
+# ChromaDB vector store
+.chroma/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage

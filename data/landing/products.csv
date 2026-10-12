@@ -1,0 +1,26 @@
+product_id,product_name,category,brand,unit_cost,launch_date
+P001,Wireless Noise-Cancelling Headphones,Electronics,SoundMax,89.99,2022-03-15
+P002,4K Smart TV 55 inch,Electronics,VisionPro,499.99,2021-11-01
+P003,Ergonomic Office Chair,Furniture,ComfortPlus,229.99,2020-06-10
+P004,Standing Desk Adjustable,Furniture,DeskMate,349.99,2021-02-20
+P005,Men's Running Shoes,Sports,SwiftStep,74.99,2023-01-05
+P006,Yoga Mat Premium,Sports,ZenFit,29.99,2022-08-12
+P007,Bluetooth Speaker Portable,Electronics,SoundMax,49.99,2022-05-30
+P008,Women's Winter Jacket,Clothing,NorthEdge,119.99,2022-09-01
+P009,Men's Slim Fit Jeans,Clothing,DenimCo,44.99,2023-03-18
+P010,Organic Green Tea 100-pack,Food & Beverage,PureLeaf,18.99,2021-07-22
+P011,Protein Powder Chocolate 5lb,Food & Beverage,FitFuel,54.99,2022-01-10
+P012,Laptop 15 inch Core i7,Electronics,TechBook,1099.99,2023-05-15
+P013,Mechanical Keyboard RGB,Electronics,TypeMaster,89.99,2022-11-20
+P014,Bookshelf 5-Tier,Furniture,WoodWorks,149.99,2021-04-08
+P015,Outdoor Camping Tent 4-person,Sports,TrailBlaze,189.99,2022-03-01
+P016,Women's Sports Leggings,Clothing,FlexWear,34.99,2023-02-14
+P017,Coffee Maker Programmable,Food & Beverage,BrewMaster,69.99,2021-10-05
+P018,Stainless Steel Water Bottle,Sports,HydroMax,24.99,2022-06-20
+P019,Men's Polo Shirt 3-pack,Clothing,ClassicWear,39.99,2023-04-10
+P020,Gaming Mouse Wireless,Electronics,GamePro,59.99,2022-12-01
+P021,Sofa 3-Seater Fabric,Furniture,HomeStyle,699.99,2021-08-15
+P022,Multivitamin Daily 365-count,Food & Beverage,VitaBoost,32.99,2022-02-28
+P023,Basketball Official Size,Sports,SportElite,34.99,2021-09-12
+P024,Women's Running Shorts,Clothing,FlexWear,22.99,2023-05-01
+P025,Smart Watch Fitness Tracker,Electronics,TechWear,149.99,2023-02-10

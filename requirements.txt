@@ -14,3 +14,4 @@ pytest>=8.0.0
 matplotlib>=3.7.0
 plotly>=5.17.0
 duckdb>=0.9.0
+faker>=24.0.0

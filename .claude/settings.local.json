@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"C:\\\\Users\\\\avinsinha\\\\OneDrive - Deloitte \\(O365D\\)\\\\Documents\\\\Kroger\\\\Accelerate with AI\\\\Codebase\\\\Codebase\\\\IDAMP\")",
+      "Skill(artifact-design)",
+      "Artifact",
+      "Bash(python -c \"from langchain.agents import create_agent\")",
+      "Bash(venv/Scripts/python.exe -c \"from langchain.agents import create_agent; print\\('OK'\\)\")",
+      "Bash(venv/Scripts/python.exe -c \"from langgraph.prebuilt import create_react_agent; print\\('create_react_agent OK'\\)\")",
+      "Bash(venv/Scripts/pip.exe list *)"
+    ]
+  }
+}

@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
 import pandas as pd
-from core.config import LANDING_DIR, STTM_DIR
+from core.config import LANDING_DIR, STTM_DIR, llm_configured, LLM_PROVIDER, GROQ_MODEL, GEMINI_MODEL
 from core.audit import AuditLogger
 from agents.orchestrator import (
     run_until_bronze_sttm,
@@ -389,6 +389,9 @@ def render_audit_trail_panel() -> None:
     )
 
 st.title("Intent-Driven Agentic Medallion Workflow")
+_llm_label = GROQ_MODEL if LLM_PROVIDER == "groq" else GEMINI_MODEL
+_llm_status = "configured ✅" if llm_configured() else "not configured — rule-based fallback ⚙️"
+st.caption(f"LLM: **{LLM_PROVIDER}** ({_llm_label}) — {_llm_status}")
 st.markdown("Upload CSV datasets and describe your analytical goal. The multi-agent system will process data through Bronze → Silver → Gold layers with HITL approval at each stage.")
 
 # Initialize session state
@@ -420,11 +423,33 @@ with main_col:
     if st.session_state.phase == "upload":
         st.header("📤 Phase 1: Upload Data & Define Intent")
 
-        uploaded_files = st.file_uploader(
-            "Upload CSV files",
-            type=["csv"],
-            accept_multiple_files=True,
-        )
+        tab_upload, tab_generate = st.tabs(["📂 Upload CSV files", "🎲 Generate synthetic demo data"])
+
+        with tab_upload:
+            uploaded_files = st.file_uploader(
+                "Upload one or more CSV files",
+                type=["csv"],
+                accept_multiple_files=True,
+            )
+
+        with tab_generate:
+            st.markdown(
+                "Generate realistic **messy** synthetic retail sales data — mixed date formats, "
+                "currency symbols, negative quantities (returns), duplicate rows, and missing values."
+            )
+            n_rows = st.number_input("Rows to generate", min_value=100, max_value=5000, value=600, step=100)
+            if st.button("🎲 Generate & use synthetic data"):
+                try:
+                    from utils.data_generator import generate_raw_sales_csv
+                    gen_path = str(LANDING_DIR / "synthetic_sales.csv")
+                    generate_raw_sales_csv(gen_path, n_rows=int(n_rows))
+                    st.success(f"Generated {n_rows} rows → {gen_path}")
+                    st.session_state["_synthetic_path"] = gen_path
+                except Exception as e:
+                    st.error(f"Generation failed: {e}")
+
+        if st.session_state.get("_synthetic_path"):
+            st.info(f"Using generated file: `{st.session_state['_synthetic_path']}`")
 
         business_intent = st.text_area(
             "Business Intent / Question",
@@ -432,28 +457,35 @@ with main_col:
             height=100,
         )
 
-        if st.button("🚀 Start Workflow", disabled=not (uploaded_files and business_intent)):
-            # Persist uploads before orchestration so all agents use stable file paths.
+        # Determine which files to use
+        _use_synthetic = bool(st.session_state.get("_synthetic_path")) and not uploaded_files
+        _can_start = business_intent and (uploaded_files or st.session_state.get("_synthetic_path"))
+
+        if st.button("🚀 Start Workflow", disabled=not _can_start):
             saved_paths = []
-            for uf in uploaded_files:
-                if uf is None:
-                    st.error("One of the uploaded files is invalid.")
-                    st.stop()
-                save_path = str(LANDING_DIR / uf.name)
-                try:
-                    with open(save_path, "wb") as f:
-                        f.write(uf.getbuffer())
-                    saved_paths.append(save_path)
-                except Exception as e:
-                    st.error(f"Failed to save {uf.name}: {str(e)}")
-                    st.stop()
+
+            if _use_synthetic:
+                saved_paths = [st.session_state["_synthetic_path"]]
+            else:
+                for uf in uploaded_files:
+                    if uf is None:
+                        st.error("One of the uploaded files is invalid.")
+                        st.stop()
+                    save_path = str(LANDING_DIR / uf.name)
+                    try:
+                        with open(save_path, "wb") as f:
+                            f.write(uf.getbuffer())
+                        saved_paths.append(save_path)
+                    except Exception as e:
+                        st.error(f"Failed to save {uf.name}: {str(e)}")
+                        st.stop()
 
             with st.spinner("🔍 Profiling data and generating Bronze STTM..."):
                 try:
-                    # Transition: capture intent and produce first draft STTM for Bronze review.
                     result = run_until_bronze_sttm(saved_paths, business_intent)
                     st.session_state.pipeline_state = result
                     st.session_state.current_run_id = result.get("run_id", "")
+                    st.session_state.pop("_synthetic_path", None)
                     if result.get("error"):
                         st.error(f"❌ Error: {result['error']}")
                     else:

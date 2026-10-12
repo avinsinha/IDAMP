@@ -38,17 +38,21 @@ BUSINESS_REQUIREMENTS = (
 )
 
 
+def _rule_based_plan(paths) -> dict:
+    plan = json.loads(json.dumps(DEFAULT_PLAN))
+    plan["_meta"] = {"generated_by": "rule_based_fallback"}
+    save_plan(plan, str(paths.sttm_json))
+    return plan
+
+
 def _generate_sttm_plan(paths, profile: dict) -> dict:
     """Use LLM if available, else return the deterministic DEFAULT_PLAN."""
+    logger = logging.getLogger("main_cli")
     model = llm_provider.get_chat_model()
     if model is None:
-        logging.getLogger("main_cli").info("LLM unavailable — using rule-based DEFAULT_PLAN.")
-        plan = json.loads(json.dumps(DEFAULT_PLAN))
-        plan["_meta"] = {"generated_by": "rule_based_fallback"}
-        save_plan(plan, str(paths.sttm_json))
-        return plan
+        logger.info("LLM unavailable — using rule-based DEFAULT_PLAN.")
+        return _rule_based_plan(paths)
 
-    from langchain.agents import create_agent  # noqa: F401 — replaced below
     from langgraph.prebuilt import create_react_agent
     from langchain_core.messages import HumanMessage
     from tools.sttm_tools import save_sttm_plan
@@ -60,36 +64,44 @@ def _generate_sttm_plan(paths, profile: dict) -> dict:
         "the profile. Call save_sttm_plan exactly once with your finished plan."
     )
 
-    agent = create_react_agent(model, tools=[save_sttm_plan], prompt=SYSTEM_PROMPT)
-    user_msg = (
-        f"BUSINESS REQUIREMENTS:\n{BUSINESS_REQUIREMENTS}\n\n"
-        f"DATA PROFILE:\n{json.dumps(profile, indent=2, default=str)}\n\n"
-        f"Design the transformation plan and save it to '{paths.sttm_json}'."
-    )
-    agent.invoke({"messages": [HumanMessage(content=user_msg)]})
+    try:
+        agent = create_react_agent(model, tools=[save_sttm_plan], prompt=SYSTEM_PROMPT)
+        user_msg = (
+            f"BUSINESS REQUIREMENTS:\n{BUSINESS_REQUIREMENTS}\n\n"
+            f"DATA PROFILE:\n{json.dumps(profile, indent=2, default=str)}\n\n"
+            f"Design the transformation plan and save it to '{paths.sttm_json}'."
+        )
+        agent.invoke({"messages": [HumanMessage(content=user_msg)]})
+        with open(paths.sttm_json) as f:
+            plan = json.load(f)
+        plan.setdefault("_meta", {})["generated_by"] = "llm"
+        save_plan(plan, str(paths.sttm_json))
+        return plan
+    except Exception as e:
+        logger.warning("LLM STTM generation failed (%s) — falling back to DEFAULT_PLAN.", e)
+        return _rule_based_plan(paths)
 
-    with open(paths.sttm_json) as f:
-        plan = json.load(f)
-    plan.setdefault("_meta", {})["generated_by"] = "llm"
-    save_plan(plan, str(paths.sttm_json))
-    return plan
+
+def _fallback_narrative(kpis: dict) -> str:
+    cats = ", ".join(f"{k} (${v:,.2f})" for k, v in list(kpis["top_categories"].items())[:3])
+    stores = ", ".join(f"{k} (${v:,.2f})" for k, v in list(kpis["top_stores"].items())[:3])
+    return (
+        f"Pipeline processed data through Bronze, Silver, and Gold layers, producing "
+        f"{kpis['row_count_gold']} aggregated analytics rows. "
+        f"Total net revenue: ${kpis['total_revenue']:,.2f} across {kpis['total_orders']} orders. "
+        f"Average order value: ${kpis['avg_order_value']:,.2f}. "
+        f"Returns totalled ${kpis['total_returns_value']:,.2f}.\n"
+        f"Top categories: {cats}.\nTop stores: {stores}.\n"
+        "Recommendation: replicate top-category strategies across underperforming segments."
+    )
 
 
 def _generate_report_narrative(kpis: dict) -> str:
     """Use LLM reporter agent if available, else build a templated narrative."""
+    logger = logging.getLogger("main_cli")
     model = llm_provider.get_chat_model()
     if model is None:
-        cats = ", ".join(f"{k} (${v:,.2f})" for k, v in list(kpis["top_categories"].items())[:3])
-        stores = ", ".join(f"{k} (${v:,.2f})" for k, v in list(kpis["top_stores"].items())[:3])
-        return (
-            f"Pipeline processed data through Bronze, Silver, and Gold layers, producing "
-            f"{kpis['row_count_gold']} aggregated analytics rows. "
-            f"Total net revenue: ${kpis['total_revenue']:,.2f} across {kpis['total_orders']} orders. "
-            f"Average order value: ${kpis['avg_order_value']:,.2f}. "
-            f"Returns totalled ${kpis['total_returns_value']:,.2f}.\n"
-            f"Top categories: {cats}.\nTop stores: {stores}.\n"
-            "Recommendation: replicate top-category strategies across underperforming segments."
-        )
+        return _fallback_narrative(kpis)
 
     from langgraph.prebuilt import create_react_agent
     from langchain_core.messages import HumanMessage
@@ -100,9 +112,13 @@ def _generate_report_narrative(kpis: dict) -> str:
         "Gold table, then write a concise executive summary with 2-3 actionable recommendations. "
         "Plain prose only — no markdown."
     )
-    agent = create_react_agent(model, tools=[query_gold_sql], prompt=REPORTER_PROMPT)
-    result = agent.invoke({"messages": [HumanMessage(content=BUSINESS_REQUIREMENTS)]})
-    return result["messages"][-1].content or "Report generation complete."
+    try:
+        agent = create_react_agent(model, tools=[query_gold_sql], prompt=REPORTER_PROMPT)
+        result = agent.invoke({"messages": [HumanMessage(content=BUSINESS_REQUIREMENTS)]})
+        return result["messages"][-1].content or _fallback_narrative(kpis)
+    except Exception as e:
+        logger.warning("LLM reporter failed (%s) — using templated narrative.", e)
+        return _fallback_narrative(kpis)
 
 
 def main():

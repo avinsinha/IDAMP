@@ -25,7 +25,7 @@ EMBEDDING_MODEL = "models/text-embedding-004"
 
 # Groq Configuration (preferred - higher free tier limits)
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "llama-3.1-70b-versatile"
 
 # Use Groq if available, else fall back to Gemini
 _env_llm = os.getenv("LLM_PROVIDER", "").strip().lower()
